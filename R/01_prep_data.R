@@ -80,7 +80,7 @@ if (!file_exists(here('data/rockland_2016_2020.geojson'))) {
       )
     )
   
-  elec_16 <- list(shp_16, pre_16, ush_16, pre_20, ush_20) |> 
+  elec_16 <- list(shp_16, pre_16, ush_16, uss_16, pre_20, ush_20) |> 
     reduce(left_join, by = c('precinct'))
   
   # 2024 uses new precinct shapes ----
