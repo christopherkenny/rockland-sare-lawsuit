@@ -67,6 +67,11 @@ cvrs_national_tbl <- tibble(
             cvrs_national$n_other)
 )
 
+write_csv(
+  cvrs_national_tbl,
+  here('data-out/cvrs_national.csv')
+)
+
 cvrs_national_tbl |> 
   gt() |> 
   tab_spanner(
@@ -74,11 +79,27 @@ cvrs_national_tbl |>
     columns = c(Democratic, Republican, Other)
   ) |> 
   fmt_number(
-    columns = everything(),
+    columns = c(Democratic, Republican, Other),
     decimals = 0
   ) |> 
   gtsave(
     filename = here('figures/cvrs_national.html'),
+    inline_css = TRUE
+  )
+
+cvrs_national_tbl |> 
+  mutate(across(c(Democratic, Republican, Other), function(x) x / cvrs_national$n)) |> 
+  gt() |> 
+  tab_spanner(
+    label = 'President',
+    columns = c(Democratic, Republican, Other)
+  ) |> 
+  fmt_percent(
+    columns = c(Democratic, Republican, Other),
+    decimals = 1
+  ) |> 
+  gtsave(
+    filename = here('figures/cvrs_national_percent.html'),
     inline_css = TRUE
   )
 
@@ -104,8 +125,45 @@ cvrs_stats <- cvrs_wide |>
     rolloff_dem = ((n_dem + n_demrep + n_demother) - (n_dem + n_repdem + n_otherdem)) / 
       (n_dem + n_demrep + n_demother),
     rolloff_rep = ((n_rep + n_repdem + n_repother) - (n_rep + n_demrep + n_otherrep)) /
-      (n_rep + n_repdem + n_repother)
+      (n_rep + n_repdem + n_repother),
+    pct_split = (n - n_dem - n_rep - n_other) / n * 100
   )
+
+cvrs_stats |> 
+  ggplot() + 
+  geom_histogram(aes(x = pct_split), bins = 40) + 
+  scale_x_continuous(
+    name = 'Percent of Ballots with Split Vote by County',
+    breaks = 0:14
+  ) +
+  scale_y_continuous(name = 'Number of Counties', breaks = 0:12) +
+  theme_blog()
+
+ggsave(
+  filename = here('figures/cvrs_split_vote.png'),
+  width = 8, height = 6, dpi = 300
+)
+
+elec_24_comparison <- elec_24_sum |> 
+  summarize(
+    across(where(is.numeric), sum),
+    dropoff_24_dem_uss = (((pre_24_dem_sum) - uss_24_dem_sum) / pre_24_dem_sum),
+    dropoff_24_rep_uss = (((pre_24_rep_sum) - uss_24_rep_sum) / pre_24_rep_sum)
+  ) |> 
+  select(
+    dropoff_24_dem_uss, dropoff_24_rep_uss
+  ) |> 
+  pivot_longer(
+    cols = everything(),
+    names_to = 'rolloff_type',
+    values_to = 'value'
+  ) |>
+  mutate(
+    rolloff_type = recode(rolloff_type, 
+                          dropoff_24_dem_uss = 'Democratic',
+                          dropoff_24_rep_uss = 'Republican')
+  )
+  
 
 cvrs_stats |> 
   select(state, county_name, starts_with('rolloff')) |>
@@ -119,7 +177,22 @@ cvrs_stats |>
   ) |> 
   ggplot() + 
   geom_histogram(aes(x =  value), bins = 40) + 
+  geom_vline(
+    data = elec_24_comparison,
+    aes(xintercept = value, color = rolloff_type),
+    linetype = 'dashed'
+  ) +
   facet_wrap(~rolloff_type) +  
-  scale_x_continuous(name = 'President - US Senate Ballot Difference', labels = scales::label_percent()) + 
+  scale_x_continuous(name = 'President - US Senate Ballot Difference', labels = scales::label_percent(),
+                     breaks = scales::pretty_breaks()) + 
   scale_y_continuous(name = 'Number of Counties') +
-  theme_blog()
+  scale_color_manual(
+    values = c('Democratic' = '#638BC6', 'Republican' = '#C27568'),
+    name = 'Party'
+  ) +
+  theme_blog() 
+
+ggsave(
+  filename = here('figures/cvrs_rolloff.png'),
+  width = 8, height = 6, dpi = 300
+)
