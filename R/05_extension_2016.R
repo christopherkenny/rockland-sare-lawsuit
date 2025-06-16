@@ -36,8 +36,13 @@ elec_16_precs |>
     values = c('Dem.' = '#638BC6', 'Rep.' = '#C27568'),
     name = 'Party'
   ) +
-  theme_blog() + 
   scale_x_continuous(name = 'Election District Number within Town',
                      breaks = scales::pretty_breaks(n = 8)) +
   scale_y_continuous(name = 'President - US Senate Ballot Difference') +
   #lims(y = c(-25, 100)) 
+  theme_blog() 
+
+ggsave(
+  filename = here('figures/extension_16_senate_dropoff.png'),
+  width = 8, height = 6, dpi = 300
+)

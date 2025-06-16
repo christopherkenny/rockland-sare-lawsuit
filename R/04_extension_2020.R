@@ -41,3 +41,8 @@ elec_20_precs |>
   scale_y_continuous(name = 'President - US House Ballot Difference') +
   #lims(y = c(-25, 100)) +
   theme_blog()
+
+ggsave(
+  filename = here('figures/extension_20_house_dropoff.png'),
+  width = 8, height = 6, dpi = 300
+)
