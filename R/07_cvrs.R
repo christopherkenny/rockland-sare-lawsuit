@@ -5,3 +5,77 @@ if (!file_exists(here(path_cvr_zip))) {
   writeBin(zip_raw, here(path_cvr_zip))
   unzip(here(path_cvr_zip), exdir = here('data-raw/cvrs'))
 }
+
+cvrs <- arrow::open_dataset(here('data-raw/cvrs/release'))
+# follow the code in the paper: 
+# contested races in battlegrounds w/ senate + president
+cvrs_sub <- cvrs |>
+  filter(
+    # drop GEORGIA too bc it had 2 senate races in 2020
+    !state %in% c('GEORGIA'),
+    # subset to just two offices
+    office %in% c('US PRESIDENT', 'US SENATE')
+  ) |>
+  collect() |>
+  # Contested contests
+  filter(any(party == 'REP') & any(party == 'DEM'),
+         .by = c(state, office, district)
+  ) |>
+  # Ballots with Presidential vote
+  filter(any(office == 'US PRESIDENT'),
+         .by = c(state, county_name, cvr_id)
+  ) |> 
+  # Ballots with Senate vote
+  filter(any(office == 'US SENATE'),
+         .by = c(state, county_name, cvr_id)
+  )
+
+cvrs_wide <- cvrs_sub |> 
+  pivot_wider(
+    id_cols = c(state, county_name, cvr_id),
+    names_from = office,
+    values_from = party
+  ) |> 
+  janitor::clean_names()
+
+cvrs_stats <- cvrs_wide |> 
+  group_by(
+    state, county_name
+  ) |> 
+  summarize(
+    n = n(),
+    n_dem = sum(us_president == 'DEM' & us_senate == 'DEM', na.rm = TRUE),
+    n_rep = sum(us_president == 'REP' & us_senate == 'REP', na.rm = TRUE),
+    n_demrep = sum(us_president == 'DEM' & us_senate == 'REP', na.rm = TRUE),
+    n_repdem = sum(us_president == 'REP' & us_senate == 'DEM', na.rm = TRUE),
+    n_demother = sum(us_president == 'DEM' & us_senate != 'REP' & us_senate != 'DEM', na.rm = TRUE),
+    n_repother = sum(us_president == 'REP' & us_senate != 'REP' & us_senate != 'DEM', na.rm = TRUE),
+    n_otherdem = sum(us_president != 'REP' & us_president != 'DEM' & us_senate == 'DEM', na.rm = TRUE),
+    n_otherrep = sum(us_president != 'REP' & us_president != 'DEM' & us_senate == 'REP', na.rm = TRUE),
+    n_other = n - (n_dem + n_rep + n_demrep + n_repdem + n_demother + n_repother + n_otherdem + n_otherrep),
+    .groups = 'drop'
+  ) |> 
+  mutate(
+    across(starts_with('n_'), .fns = \(x) x / n * 100, .names = 'pct_{col}'),
+    rolloff_dem = ((n_dem + n_demrep + n_demother) - (n_dem + n_repdem + n_otherdem)) / 
+      (n_dem + n_demrep + n_demother),
+    rolloff_rep = ((n_rep + n_repdem + n_repother) - (n_rep + n_demrep + n_otherrep)) /
+      (n_rep + n_repdem + n_repother)
+  )
+
+cvrs_stats |> 
+  select(state, county_name, starts_with('rolloff')) |>
+  pivot_longer(
+    cols = c(rolloff_dem, rolloff_rep),
+    names_to = 'rolloff_type',
+    names_prefix = 'rolloff_'
+  ) |> 
+  mutate(
+    rolloff_type = recode(rolloff_type, dem = 'Democratic', rep = 'Republican')
+  ) |> 
+  ggplot() + 
+  geom_histogram(aes(x =  value), bins = 40) + 
+  facet_wrap(~rolloff_type) +  
+  scale_x_continuous(name = 'President - US Senate Ballot Difference', labels = scales::label_percent()) + 
+  scale_y_continuous(name = 'Number of Counties') +
+  theme_blog()
