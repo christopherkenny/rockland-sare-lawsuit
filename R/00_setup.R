@@ -6,6 +6,7 @@ suppressMessages({
   library(fs)
   library(readxl)
   library(dataverse)
+  library(gt)
   
   # spatial ----
   library(sf)

@@ -38,6 +38,50 @@ cvrs_wide <- cvrs_sub |>
   ) |> 
   janitor::clean_names()
 
+cvrs_national <- cvrs_wide |> 
+  summarize(
+    n = n(),
+    n_dem = sum(us_president == 'DEM' & us_senate == 'DEM', na.rm = TRUE),
+    n_rep = sum(us_president == 'REP' & us_senate == 'REP', na.rm = TRUE),
+    n_demrep = sum(us_president == 'DEM' & us_senate == 'REP', na.rm = TRUE),
+    n_repdem = sum(us_president == 'REP' & us_senate == 'DEM', na.rm = TRUE),
+    n_demother = sum(us_president == 'DEM' & us_senate != 'REP' & us_senate != 'DEM', na.rm = TRUE),
+    n_repother = sum(us_president == 'REP' & us_senate != 'REP' & us_senate != 'DEM', na.rm = TRUE),
+    n_otherdem = sum(us_president != 'REP' & us_president != 'DEM' & us_senate == 'DEM', na.rm = TRUE),
+    n_otherrep = sum(us_president != 'REP' & us_president != 'DEM' & us_senate == 'REP', na.rm = TRUE),
+    n_other = n - (n_dem + n_rep + n_demrep + n_repdem + n_demother + n_repother + n_otherdem + n_otherrep),
+    .groups = 'drop'
+  )
+
+
+cvrs_national_tbl <- tibble(
+  Senate = c('Democratic', 'Republican', 'Other'),
+  Democratic = c(cvrs_national$n_dem, 
+           cvrs_national$n_demrep, 
+           cvrs_national$n_demother),
+  Republican = c(cvrs_national$n_repdem, 
+            cvrs_national$n_rep,
+            cvrs_national$n_repother),
+  Other = c(cvrs_national$n_otherdem,
+            cvrs_national$n_otherrep, 
+            cvrs_national$n_other)
+)
+
+cvrs_national_tbl |> 
+  gt() |> 
+  tab_spanner(
+    label = 'President',
+    columns = c(Democratic, Republican, Other)
+  ) |> 
+  fmt_number(
+    columns = everything(),
+    decimals = 0
+  ) |> 
+  gtsave(
+    filename = here('figures/cvrs_national.html'),
+    inline_css = TRUE
+  )
+
 cvrs_stats <- cvrs_wide |> 
   group_by(
     state, county_name
