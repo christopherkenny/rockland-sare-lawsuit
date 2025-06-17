@@ -61,3 +61,58 @@ ggsave(
   width = 8, height = 6, dpi = 300
 )
 
+elec_24_sloats |> 
+  ggplot() + 
+  geom_sf(aes(fill = uss_24_ove)) + 
+  geom_sf(
+    data = sloatsburg_area,
+    fill = NA,
+    linewidth = 2,
+    color = 'white'
+  ) +
+  geom_sf(fill = NA) +
+  geom_sf_text(aes(label = ed_key), size = 3, color = 'black') + 
+  geom_district_text(
+    data = sloatsburg_area,
+    aes(label = VILLAGE, grouping = VILLAGE),
+    color = 'black'
+  ) +
+  scale_fill_continuous(
+    name = 'Overvotes',
+    low = 'white', high = '#3d405b',
+    breaks = 0:2
+  ) +
+  theme_map()
+
+ggsave(
+  filename = here('figures/sloatsburg_area_overvotes.png'),
+  width = 8, height = 6, dpi = 300
+)
+
+elec_24_sloats |> 
+  ggplot() + 
+  geom_sf(aes(fill = uss_24_und)) + 
+  geom_sf(
+    data = sloatsburg_area,
+    fill = NA,
+    linewidth = 2,
+    color = 'white'
+  ) +
+  geom_sf(fill = NA) +
+  geom_sf_text(aes(label = ed_key), size = 3, color = 'black') + 
+  geom_district_text(
+    data = sloatsburg_area,
+    aes(label = VILLAGE, grouping = VILLAGE),
+    color = 'black'
+  ) +
+  scale_fill_continuous(
+    name = 'Undervotes',
+    low = 'white', high = '#0A92A7',
+    breaks = scales::pretty_breaks()
+  ) +
+  theme_map()
+
+ggsave(
+  filename = here('figures/sloatsburg_area_undervotes.png'),
+  width = 8, height = 6, dpi = 300
+)
