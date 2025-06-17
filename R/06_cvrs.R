@@ -69,7 +69,7 @@ cvrs_national_tbl <- tibble(
 
 write_csv(
   cvrs_national_tbl,
-  here('data-out/cvrs_national.csv')
+  here('data/cvrs_national.csv')
 )
 
 cvrs_national_tbl |> 
