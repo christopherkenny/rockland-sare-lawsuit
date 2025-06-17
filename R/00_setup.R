@@ -17,6 +17,7 @@ suppressMessages({
   
   # plotting ----
   library(patchwork)
+  library(wacolors)
 })
 
 walk(Sys.glob(here('R/utils/*.R')), source)
