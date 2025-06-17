@@ -5,3 +5,7 @@ All public data necessary is included in the `data-raw` folder, with the excepti
 
 1. A copy of the NY voter file, as I cannot legally distribute this
 2. A listing of the names and election districts for individuals who filed affidavits. These are technically public, but they are ordinary voters, not politicians. This can be recreated by reading the filings on [NYS CEF](https://iapps.courts.state.ny.us/nyscef/DocumentList?docketId=8m9vd/TuVGcRxztbi5BQMw==&display=all&courtType=Rockland%20County%20Supreme%20Court&resultsPageNum=1).
+
+---
+
+After reviewing the data, I see no large, credible evidence of electoral fraud, just misunderstood data.
